@@ -1,3 +1,4 @@
 data/
 envvars
 static.conf
+vars.conf
