@@ -5,7 +5,7 @@ set -euo pipefail
 # ===== 配置区域 =====
 SELF_ID="${SELF_ID:-}"
 IDX_START=1
-IDX_END=11
+IDX_END=13
 IP_TEMPLATE="2406:840:e300:ffee:3397::{{IDX}}"
 OUTPUT_DIR="/etc/bird/ibgp"
 ASN=150184
