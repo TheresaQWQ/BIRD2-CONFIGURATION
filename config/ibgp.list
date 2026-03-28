@@ -40,8 +40,8 @@
 
 # sg-sgp-nextrat -> sg-sgp-vultr
 9,1
-# sg-sgp-nextrat -> cn-wuh-rocket
-9,2
+# sg-sgp-nextrat -> cn-wuh-rocket (disabled)
+# 9,2
 # sg-sgp-nextrat -> cn-hkg-hklite
 9,4
 # sg-sgp-nextrat -> cn-hkg-mdixvm
