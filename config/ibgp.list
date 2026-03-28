@@ -1,0 +1,57 @@
+# sg-sgp-vultr -> tw-tpe-poemaix
+1,3
+# sg-sgp-vultr -> cn-hkg-hklite
+1,4
+# sg-sgp-vultr -> jp-nrt-akile
+1,5
+# sg-sgp-vultr -> sg-sgp-nextrat
+1,9
+# sg-sgp-vultr -> cn-hkg-mdixvm
+1,13
+
+# cn-wuh-rocket -> cn-pek-ucloud
+2,7
+
+# tw-tpe-poemaix -> jp-nrt-akile
+3,5
+
+# cn-hkg-hklite -> sg-sgp-vultr
+4,1
+# cn-hkg-hklite -> jp-nrt-akile
+4,5
+# cn-hkg-hklite -> cn-hkg-akile
+4,6
+# cn-hkg-hklite -> cn-hkg-mdixvm
+4,13
+
+# cn-hkg-mdixvm -> tw-tpe-poemaix
+5,3
+# cn-hkg-mdixvm -> cn-hkg-hklite
+5,4
+# cn-hkg-mdixvm -> cn-hkg-mdixvm
+5,13
+
+# cn-pek-ucloud -> sg-sgp-vultr
+7,1
+# cn-pek-ucloud -> sg-sgp-nextrat
+7,9
+# cn-pek-ucloud -> cn-hkg-mdixvm
+7,13
+
+# sg-sgp-nextrat -> sg-sgp-vultr
+9,1
+# sg-sgp-nextrat -> cn-wuh-rocket
+9,2
+# sg-sgp-nextrat -> cn-hkg-hklite
+9,4
+# sg-sgp-nextrat -> cn-hkg-mdixvm
+9,13
+
+# cn-hkg-mdixvm -> sg-sgp-vultr
+13,1
+# cn-hkg-mdixvm -> cn-hkg-hklite
+13,4
+# cn-hkg-mdixvm -> jp-nrt-akile
+13,5
+# cn-hkg-mdixvm -> sg-sgp-nextrat
+13,9

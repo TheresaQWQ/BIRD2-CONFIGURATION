@@ -4,18 +4,10 @@ set -euo pipefail
 
 # ===== 配置区域 =====
 SELF_ID="${SELF_ID:-}"
-IDX_START=1
-IDX_END=13
 IP_TEMPLATE="2406:840:e300:ffee:3397::{{IDX}}"
 OUTPUT_DIR="/etc/bird/ibgp"
+LIST_FILE="/etc/bird/config/ibgp.list"
 ASN=150184
-NEIGHBOR_COUNT=5
-
-# ===== 过滤阈值 (可调整) =====
-MAX_LATENCY_MS=120       # 最大允许延迟 (ms)
-MAX_LOSS_PERCENT=20      # 最大允许丢包率 (%)
-PING_COUNT=10            # Ping 包数量
-PING_TIMEOUT=1           # 单个包超时时间 (s)
 
 # ===== 工具函数 =====
 
@@ -23,12 +15,16 @@ log() {
   echo "[$(date '+%H:%M:%S')] $*"
 }
 
+# 用于生成带前导零的十进制编号 (用于协议命名, 如 001, 013)
 pad_idx() {
   printf "%03d" "$1"
 }
 
-gen_ip() {
-  echo "$IP_TEMPLATE" | sed "s/{{IDX}}/$1/g"
+# 将十进制 ID 转换为十六进制并生成 IPv6 地址
+gen_ip_hex() {
+  local dec_id="$1"
+  local hex_id=$(printf "%x" "$dec_id")
+  echo "$IP_TEMPLATE" | sed "s/{{IDX}}/$hex_id/g"
 }
 
 # 自动检测 SELF_ID
@@ -84,26 +80,6 @@ auto_detect_self_id() {
   fi
 }
 
-# 获取延迟和丢包率
-get_ping_stats() {
-  local ip=$1
-  local ping_output
-  local loss="100"
-  local latency="9999"
-
-  ping_output=$(ping -c "$PING_COUNT" -W "$PING_TIMEOUT" "$ip" 2>&1 || true)
-
-  # 解析丢包率
-  loss=$(echo "$ping_output" | awk '/packet loss/ {for(i=1;i<=NF;i++) if($i ~ /^[0-9]+%$/) {gsub(/%/,"",$i); print $i; exit}}')
-  if [ -z "$loss" ]; then loss="100"; fi
-
-  # 解析平均延迟 (使用 / 分隔取第 5 个字段)
-  latency=$(echo "$ping_output" | awk -F'/' '/avg/ {print $5}')
-  if [ -z "$latency" ]; then latency="9999"; fi
-
-  echo "$loss $latency"
-}
-
 # ===== 自动识别或手动指定 SELF_ID =====
 if [ -z "$SELF_ID" ]; then
   log "SELF_ID not specified, auto-detecting..."
@@ -129,109 +105,78 @@ else
   log "Using specified SELF_ID: $SELF_ID"
 fi
 
-# ===== 初始化 =====
+# ===== 初始化与验证 =====
 mkdir -p "$OUTPUT_DIR"
-TMP_FILE=$(mktemp)
-
-trap 'rm -f "$TMP_FILE"' EXIT
-
-# ===== 当前节点信息 =====
 SELF_IDX=$(pad_idx "$SELF_ID")
-SELF_IP=$(gen_ip "$SELF_ID")
+SELF_IP=$(gen_ip_hex "$SELF_ID")
 INTERFACE="kawaiinet${SELF_IDX}"
 
-# 验证接口是否存在
-if ! ip link show "$INTERFACE" &>/dev/null; then
-  log "WARNING: Interface $INTERFACE does not exist!"
-  log "Proceeding anyway (interface may be created later)..."
+log "=============================="
+log "Current Node: ID $SELF_ID (Padded: $SELF_IDX)"
+log "Local IPv6  : $SELF_IP"
+log "Interface   : $INTERFACE"
+log "=============================="
+
+if [ ! -f "$LIST_FILE" ]; then
+  log "ERROR: Topology file $LIST_FILE not found!"
+  exit 1
 fi
 
-log "=============================="
-log "Current Node: $SELF_IDX ($SELF_IP)"
-log "Interface: $INTERFACE"
-log "Filter: Latency <= ${MAX_LATENCY_MS}ms, Loss <= ${MAX_LOSS_PERCENT}%"
-log "=============================="
+# ===== 读取并解析拓扑文件 =====
+# 声明一个关联数组用于去重
+declare -A NEIGHBORS_MAP
 
-# ===== 探测其他节点 =====
-valid_count=0
-
-for ((j=IDX_START; j<=IDX_END; j++)); do
-  if [ "$j" -eq "$SELF_ID" ]; then
+log "Parsing topology file: $LIST_FILE"
+while IFS= read -r line || [ -n "$line" ]; do
+  # 去除行内的注释 (即 # 及之后的所有内容)
+  line="${line%%#*}"
+  # 去除所有的空白字符
+  line="${line//[[:space:]]/}"
+  
+  # 忽略空行
+  if [[ -z "$line" ]]; then
     continue
   fi
 
-  REMOTE_IP=$(gen_ip "$j")
-  REMOTE_IDX_PAD=$(pad_idx "$j")
+  # 匹配 A,B 格式
+  if [[ "$line" =~ ^([0-9]+),([0-9]+)$ ]]; then
+    NODE_A="${BASH_REMATCH[1]}"
+    NODE_B="${BASH_REMATCH[2]}"
 
-  log "Probing node $REMOTE_IDX_PAD ($REMOTE_IP)..."
-
-  read -r LOSS LATENCY <<< "$(get_ping_stats "$REMOTE_IP")"
-
-  # 格式化显示
-  LOSS_DISPLAY="${LOSS}%"
-  if [ "$LATENCY" == "9999" ] || [ -z "$LATENCY" ]; then
-    LATENCY_DISPLAY="unreachable"
-  else
-    LATENCY_DISPLAY="${LATENCY} ms"
-  fi
-
-  # ===== 过滤逻辑 =====
-  is_valid=true
-
-  # 1. 检查是否不可达
-  if [ "$LOSS" -ge 100 ] || [ "$LATENCY" == "9999" ] || [ -z "$LATENCY" ]; then
-    log "  -> SKIP: Unreachable (Loss: $LOSS_DISPLAY, Lat: $LATENCY_DISPLAY)"
-    is_valid=false
-  fi
-
-  # 2. 检查丢包率阈值
-  if [ "$is_valid" == true ] && [ "$LOSS" -gt "$MAX_LOSS_PERCENT" ]; then
-    log "  -> SKIP: High Packet Loss (Loss: $LOSS_DISPLAY > ${MAX_LOSS_PERCENT}%)"
-    is_valid=false
-  fi
-
-  # 3. 检查延迟阈值 (浮点数比较)
-  if [ "$is_valid" == true ]; then
-    exceed_latency=$(awk -v lat="$LATENCY" -v max="$MAX_LATENCY_MS" 'BEGIN {print (lat > max) ? 1 : 0}')
-    if [ "$exceed_latency" -eq 1 ]; then
-      log "  -> SKIP: High Latency (Lat: $LATENCY_DISPLAY > ${MAX_LATENCY_MS}ms)"
-      is_valid=false
+    # 双向匹配：只要自己是其中一端，就把另一端加入邻居列表
+    if [ "$NODE_A" -eq "$SELF_ID" ]; then
+      NEIGHBORS_MAP["$NODE_B"]=1
+    elif [ "$NODE_B" -eq "$SELF_ID" ]; then
+      NEIGHBORS_MAP["$NODE_A"]=1
     fi
+  else
+    log "WARNING: Unrecognized line format, ignoring: $line"
   fi
+done < "$LIST_FILE"
 
-  # 如果通过过滤，写入临时文件
-  if [ "$is_valid" == true ]; then
-    log "  -> PASS (Loss: $LOSS_DISPLAY, Lat: $LATENCY_DISPLAY)"
-    echo "$LOSS $LATENCY $j" >> "$TMP_FILE"
-    ((valid_count++)) || true
-  fi
-done
+# 提取所有的邻居节点 ID
+NEIGHBORS="${!NEIGHBORS_MAP[@]}"
 
-# ===== 选邻居 =====
-if [ "$valid_count" -eq 0 ]; then
-  log "WARNING: No valid neighbors found matching criteria!"
-  log "Please check network connectivity or adjust thresholds."
+if [ ${#NEIGHBORS_MAP[@]} -eq 0 ]; then
+  log "WARNING: No neighbors found for SELF_ID $SELF_ID in $LIST_FILE."
   CONF_FILE="${OUTPUT_DIR}/I_AUTO_${SELF_IDX}.conf"
-  > "$CONF_FILE"
+  > "$CONF_FILE" # 生成空文件
   exit 0
 fi
 
-# 排序：优先丢包率低，其次延迟低
-NEIGHBORS=$(sort -g -k1,1 -k2,2 "$TMP_FILE" | head -n "$NEIGHBOR_COUNT" | awk '{print $3}')
-
-log "Selected ${NEIGHBOR_COUNT} neighbors from $valid_count valid candidates."
-log "Neighbors ID: $(echo $NEIGHBORS | tr '\n' ' ')"
+log "Found unique neighbors ID: $(echo $NEIGHBORS | tr '\n' ' ')"
 
 # ===== 生成配置 =====
 CONF_FILE="${OUTPUT_DIR}/I_AUTO_${SELF_IDX}.conf"
 > "$CONF_FILE"
 
-for n in $NEIGHBORS; do
+# 为了输出美观，对邻居 ID 进行排序后处理
+for n in $(echo "$NEIGHBORS" | tr ' ' '\n' | sort -n); do
   REMOTE_IDX=$(pad_idx "$n")
-  REMOTE_IP=$(gen_ip "$n")
+  REMOTE_IP=$(gen_ip_hex "$n")
   PROTO_NAME="I_${SELF_IDX}_${REMOTE_IDX}"
 
-  log "Generating BGP session: $PROTO_NAME -> $REMOTE_IP"
+  log "Generating BGP session: $PROTO_NAME -> $REMOTE_IP (Hex ID: $(printf "%x" "$n"))"
 
   cat >> "$CONF_FILE" <<EOF
 protocol bgp ${PROTO_NAME} from template_ibgp {
@@ -239,9 +184,9 @@ protocol bgp ${PROTO_NAME} from template_ibgp {
   source address ${SELF_IP};
   direct;
 }
+
 EOF
-  echo "" >> "$CONF_FILE"
 done
 
-log "Config written: $CONF_FILE"
+log "Config successfully written to: $CONF_FILE"
 log "======== DONE ========"
