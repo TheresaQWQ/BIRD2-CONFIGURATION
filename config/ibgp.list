@@ -11,16 +11,20 @@
 
 # cn-wuh-rocket -> cn-pek-ucloud
 2,7
+# cn-wuh-rocket -> cn-hkg-mdixvm
+2,13
+# cn-wuh-rocket -> cn-hkg-hklite
+2,4
 
 # tw-tpe-poemaix -> jp-nrt-akile
 3,5
+# tw-tpe-poemaix -> cn-hkg-hklite
+3,4
 
 # cn-hkg-hklite -> sg-sgp-vultr
 4,1
 # cn-hkg-hklite -> jp-nrt-akile
 4,5
-# cn-hkg-hklite -> cn-hkg-akile
-4,6
 # cn-hkg-hklite -> cn-hkg-mdixvm
 4,13
 
@@ -33,8 +37,8 @@
 
 # cn-pek-ucloud -> sg-sgp-vultr
 7,1
-# cn-pek-ucloud -> sg-sgp-nextrat
-7,9
+# cn-pek-ucloud -> cn-hkg-hklite
+7,4
 # cn-pek-ucloud -> cn-hkg-mdixvm
 7,13
 
