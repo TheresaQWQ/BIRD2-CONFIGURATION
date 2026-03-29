@@ -27,6 +27,73 @@ gen_ip_hex() {
   echo "$IP_TEMPLATE" | sed "s/{{IDX}}/$hex_id/g"
 }
 
+# 测量到目标IPv6地址的延迟和丢包率
+# 返回格式: "延迟(ms) 丢包率(%)"
+measure_network_quality() {
+  local target_ip="$1"
+  local ping_count=10
+  local timeout=2
+  
+  # 使用ping6测量网络质量
+  local ping_output
+  ping_output=$(ping -c "$ping_count" -W "$timeout" "$target_ip" 2>/dev/null) || {
+    echo "-1 100"
+    return 1
+  }
+  
+  # 提取丢包率
+  local packet_loss
+  packet_loss=$(echo "$ping_output" | grep -oP '\d+(?=% packet loss)' || echo "100")
+  
+  # 提取平均延迟
+  local avg_latency
+  if echo "$ping_output" | grep -q 'rtt min/avg/max/mdev'; then
+    avg_latency=$(echo "$ping_output" | grep 'rtt min/avg/max/mdev' | awk -F'/' '{print $5}' | cut -d'.' -f1)
+  else
+    avg_latency="-1"
+  fi
+  
+  echo "$avg_latency $packet_loss"
+}
+
+# 根据延迟和丢包率计算网络质量 (1-10, 1最优, 10最差)
+# 规则:
+# - 延迟起步30ms, 每增加20ms, 质量+1
+# - 每2%丢包率, 质量+1
+# - 最高质量为10
+calculate_network_quality() {
+  local latency="$1"
+  local packet_loss="$2"
+  
+  # 如果无法测量，返回最差质量
+  if [ "$latency" -eq -1 ] 2>/dev/null; then
+    echo "10"
+    return
+  fi
+  
+  local quality=1
+  
+  # 计算延迟贡献 (起步30ms)
+  if [ "$latency" -gt 30 ]; then
+    local extra_latency=$((latency - 30))
+    local latency_penalty=$((extra_latency / 20))
+    quality=$((quality + latency_penalty))
+  fi
+  
+  # 计算丢包率贡献 (每2%丢包率+1)
+  local loss_penalty=$((packet_loss / 2))
+  quality=$((quality + loss_penalty))
+  
+  # 限制在1-10范围内
+  if [ "$quality" -lt 1 ]; then
+    quality=1
+  elif [ "$quality" -gt 10 ]; then
+    quality=10
+  fi
+  
+  echo "$quality"
+}
+
 # 自动检测 SELF_ID
 auto_detect_self_id() {
   local interface_pattern="kawaiinet"
@@ -176,13 +243,33 @@ for n in $(echo "$NEIGHBORS" | tr ' ' '\n' | sort -n); do
   REMOTE_IP=$(gen_ip_hex "$n")
   PROTO_NAME="I_${SELF_IDX}_${REMOTE_IDX}"
 
-  log "Generating BGP session: $PROTO_NAME -> $REMOTE_IP (Hex ID: $(printf "%x" "$n"))"
+  log "Measuring network quality to $REMOTE_IP..."
+  
+  # 测量延迟和丢包率
+  read -r latency packet_loss <<< $(measure_network_quality "$REMOTE_IP")
+  
+  # 计算网络质量值
+  network_quality=$(calculate_network_quality "$latency" "$packet_loss")
+  
+  log "Network quality for $PROTO_NAME: latency=${latency}ms, loss=${packet_loss}%, quality=${network_quality}/10"
 
   cat >> "$CONF_FILE" <<EOF
 protocol bgp ${PROTO_NAME} from template_ibgp {
   neighbor ${REMOTE_IP} as ${ASN};
   source address ${SELF_IP};
   direct;
+  ipv6 {
+    next hop self;
+
+    export filter {
+      peer_setup_export("ibgp", 150184);
+    };
+
+    import filter {
+      # Network quality: ${network_quality}/10 (latency: ${latency}ms, loss: ${packet_loss}%)
+      peer_setup_import("ibgp", ${network_quality});
+    };
+  };
 }
 
 EOF

@@ -8,3 +8,13 @@
 | 114514 | 4          | ixrs                 |  False   |
 | 114514 | 5          | peer                 |  False   |
 | 100001 | Target ASN | Export to Target ASN |  False   |
+| 100002 | 1          | network quality      |  True    |
+| 100002 | 2          | network quality      |  True    |
+| 100002 | 3          | network quality      |  True    |
+| 100002 | 4          | network quality      |  True    |
+| 100002 | 5          | network quality      |  True    |
+| 100002 | 6          | network quality      |  True    |
+| 100002 | 7          | network quality      |  True    |
+| 100002 | 8          | network quality      |  True    |
+| 100002 | 9          | network quality      |  True    |
+| 100002 | 10         | network quality      |  True    |
