@@ -6,8 +6,6 @@
 1,5
 # sg-sgp-vultr -> sg-sgp-nextrat
 1,9
-# sg-sgp-vultr -> cn-hkg-mdixvm
-1,13
 
 # cn-wuh-rocket -> cn-pek-ucloud
 2,7
@@ -51,8 +49,6 @@
 # sg-sgp-nextrat -> cn-hkg-mdixvm
 9,13
 
-# cn-hkg-mdixvm -> sg-sgp-vultr
-13,1
 # cn-hkg-mdixvm -> cn-hkg-hklite
 13,4
 # cn-hkg-mdixvm -> jp-nrt-akile
