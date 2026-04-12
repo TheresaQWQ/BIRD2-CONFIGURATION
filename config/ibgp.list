@@ -5,8 +5,6 @@
 # sg-sgp-vultr -> sg-sgp-nextrat
 1,9
 
-# cn-wuh-rocket -> cn-pek-ucloud
-2,7
 # cn-wuh-rocket -> cn-hkg-mdixvm
 2,13
 # cn-wuh-rocket -> cn-hkg-hklite
@@ -20,17 +18,8 @@
 # cn-hkg-hklite -> cn-hkg-mdixvm
 4,13
 
-# cn-pek-ucloud -> sg-sgp-vultr
-7,1
-# cn-pek-ucloud -> cn-hkg-hklite
-7,4
-# cn-pek-ucloud -> cn-hkg-mdixvm
-7,13
-
 # sg-sgp-nextrat -> sg-sgp-vultr
 9,1
-# sg-sgp-nextrat -> cn-wuh-rocket (disabled)
-# 9,2
 # sg-sgp-nextrat -> cn-hkg-hklite
 9,4
 # sg-sgp-nextrat -> cn-hkg-mdixvm
