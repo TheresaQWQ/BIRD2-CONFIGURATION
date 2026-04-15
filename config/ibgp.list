@@ -7,16 +7,20 @@
 
 # cn-wuh-rocket -> cn-hkg-mdixvm
 2,13
-# cn-wuh-rocket -> cn-hkg-hklite
-2,4
+# cn-wuh-rocket -> cn-cgo-**
+2,28
 
 # tw-tpe-poemaix -> cn-hkg-hklite
 3,4
+# tw-tpe-poemaix -> cn-cgo-**
+3,28
 
 # cn-hkg-hklite -> sg-sgp-vultr
 4,1
 # cn-hkg-hklite -> cn-hkg-mdixvm
 4,13
+# cn-hkg-hklite -> cn-cgo-**
+4,28
 
 # sg-sgp-nextrat -> sg-sgp-vultr
 9,1
@@ -24,6 +28,8 @@
 9,4
 # sg-sgp-nextrat -> cn-hkg-mdixvm
 9,13
+# sg-sgp-nextrat -> cn-cgo-**
+9,28
 
 # cn-hkg-mdixvm -> cn-hkg-hklite
 13,4
