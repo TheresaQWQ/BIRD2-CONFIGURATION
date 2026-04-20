@@ -52,3 +52,8 @@
 15,11
 # de-fra-free -> gb-lhr-moedove
 15,10
+
+# cn-cgo-** -> de-fra-free
+28,15
+# cn-cgo-** -> gb-lhr-moedove
+28,10
