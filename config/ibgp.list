@@ -57,3 +57,8 @@
 28,10
 # cn-cgo-** -> cn-wuh-rocket
 28,2
+
+# cn-sha-* -> cn-wuh-rocket
+29,2
+# cn-sha-* -> cn-cgo-*
+29,28
