@@ -94,52 +94,28 @@ calculate_network_quality() {
   echo "$quality"
 }
 
-# 自动检测 SELF_ID
+# 自动检测 SELF_ID (基于 IP 地址最后一段)
 auto_detect_self_id() {
-  local interface_pattern="kawaiinet"
+  local target_interface="owonet"
+  local ip_prefix="6.33.97."
   local found_id=""
-  local found_count=0
 
-  # 方法 1: 通过 ip 命令查找匹配的接口
-  while IFS= read -r iface; do
-    if [[ "$iface" =~ ^${interface_pattern}([0-9]+)$ ]]; then
-      local id="${BASH_REMATCH[1]}"
-      # 去掉前导零
-      id=$(echo "$id" | sed 's/^0*//')
-      [ -z "$id" ] && id="0"
-      
-      if [ -n "$found_id" ]; then
-        found_count=$((found_count + 1))
-      else
-        found_id="$id"
-      fi
-    fi
-  done < <(ip -o link show | awk -F': ' '{print $2}' | cut -d'@' -f1)
+  # 使用 ip addr 直接从指定网卡获取匹配前缀的 IPv4 地址
+  # 逻辑：查找 inet 6.33.97.xxx/24 -> 提取 xxx -> 去掉前导零
+  found_id=$(ip -4 addr show dev "$target_interface" 2>/dev/null | \
+             grep -oP "inet ${ip_prefix}\K[0-9]+" | \
+             head -n 1 | \
+             sed 's/^0*//')
 
-  # 方法 2: 如果方法 1 没找到，尝试通过 /sys/class/net
-  if [ -z "$found_id" ] && [ -d "/sys/class/net" ]; then
-    for iface in /sys/class/net/*; do
-      local name=$(basename "$iface")
-      if [[ "$name" =~ ^${interface_pattern}([0-9]+)$ ]]; then
-        local id="${BASH_REMATCH[1]}"
-        id=$(echo "$id" | sed 's/^0*//')
-        [ -z "$id" ] && id="0"
-        
-        if [ -n "$found_id" ]; then
-          found_count=$((found_count + 1))
-        else
-          found_id="$id"
-        fi
-      fi
-    done
-  fi
-
-  # 返回结果
+  # 如果找到 ID 且不为空（针对 .0 的情况处理）
   if [ -z "$found_id" ]; then
+    # 如果没找到，检查一下是不是 6.33.97.0
+    local is_zero=$(ip -4 addr show dev "$target_interface" 2>/dev/null | grep -o "${ip_prefix}0/")
+    if [ -n "$is_zero" ]; then
+      echo "0"
+      return 0
+    fi
     echo ""
-  elif [ "$found_count" -gt 0 ]; then
-    # 找到多个接口，返回第一个并警告
-    echo "$found_id"
     return 1
   else
     echo "$found_id"
