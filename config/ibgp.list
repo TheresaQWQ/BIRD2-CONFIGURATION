@@ -38,12 +38,14 @@
 
 # ca-yul-cxix -> gb-lhr-moedove
 11,10
-# ca-yul-cxix -> gb-lhr-moedove
+# ca-yul-cxix -> cn-hkg-mdixvm
 11,13
 
 # gb-lhr-moedove -> sg-sgp-vultr
 10,1
 
+# de-fra-free -> cn-hkg-mdixvm
+15,13
 # de-fra-free -> sg-sgp-vultr
 15,1
 # de-fra-free -> ca-yul-cxix
@@ -51,10 +53,6 @@
 # de-fra-free -> gb-lhr-moedove
 15,10
 
-# cn-cgo-** -> de-fra-free
-28,15
-# cn-cgo-** -> gb-lhr-moedove
-28,10
 # cn-cgo-** -> cn-wuh-rocket
 28,2
 
@@ -62,3 +60,5 @@
 29,2
 # cn-sha-* -> cn-cgo-*
 29,28
+# cn-sha-* -> cn-hkg-hklite
+29,4
