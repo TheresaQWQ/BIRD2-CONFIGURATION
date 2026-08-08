@@ -62,3 +62,14 @@
 29,28
 # cn-sha-* -> cn-hkg-hklite
 29,4
+
+# cn-hkg-skywolf1 -> sg-sgp-vultr
+31,1
+# cn-hkg-skywolf1 -> cn-hkg-hklite
+31,4
+# cn-hkg-skywolf1 -> cn-hkg-akile
+31,6
+# cn-hkg-skywolf1 -> cn-hkg-mdixvm
+31,13
+# cn-hkg-skywolf1 -> cn-cgo-*
+31,28
