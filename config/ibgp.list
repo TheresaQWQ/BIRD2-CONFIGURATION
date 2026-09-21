@@ -73,3 +73,10 @@
 31,13
 # cn-hkg-skywolf1 -> cn-cgo-*
 31,28
+
+# cn-can-* -> cn-wuh-rocket
+31,2
+# cn-can-* -> cn-sha-*
+31,29
+# cn-can-* -> cn-cgo-*
+31,28
