@@ -80,3 +80,19 @@
 32,29
 # cn-can-* -> cn-cgo-*
 32,28
+
+# de-fra-91ix -> gb-mse-ixvm
+33,34
+# de-fra-91ix -> gb-lhr-moedove
+33,10
+# de-fra-91ix -> ca-yul-cxix
+33,11
+# de-fra-91ix -> de-fra-free
+33,15
+
+# gb-mse-ixvm -> gb-lhr-moedove
+34,10
+# gb-mse-ixvm -> de-fra-free
+34,15
+# gb-mse-ixvm -> ca-yul-cxix
+34,11
